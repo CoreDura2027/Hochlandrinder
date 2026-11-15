@@ -3,8 +3,16 @@
   "region": "eu",
   "regelwerk": "Normal",
   "mitglieder": [
-    { "vorname": "Vorname", "nachname": "Nachname", "rang": "Gildenmeister" },
-    { "vorname": "Zweiter", "nachname": "Charakter", "rang": "Offizier" },
-    { "vorname": "Dritter", "nachname": "Charakter", "rang": "Mitglied" }
+    { "vorname": "Muhrito",  "nachname": "Nackenknack", "rang": "Gildenmeister" },
+    { "vorname": "Leanji",   "nachname": "Glyphtusk", "rang": "Offizier" },
+    { "vorname": "Muhritz",  "nachname": "Nackenknack", "rang": "Veteran" },
+    { "vorname": "Elenora",  "nachname": "Nackenknack", "rang": "Veteran" },
+    { "vorname": "Muhrja",   "nachname": "Nackenknack", "rang": "Veteran" },
+    { "vorname": "Gibbons",  "nachname": "Ironjaw",     "rang": "Veteran" },
+    { "vorname": "Torsten",  "nachname": "Tritratroll", "rang": "Veteran" },
+    { "vorname": "Lothric",  "nachname": "Corvayne",    "rang": "Veteran" },
+    { "vorname": "Olivia",   "nachname": "Nuneris",     "rang": "Veteran" },
+    { "vorname": "Linke",    "nachname": "Gammelfuß",   "rang": "Veteran" },
+    { "vorname": "Sigrena",  "nachname": "Lightsbane",  "rang": "Initiand" }
   ]
 }
