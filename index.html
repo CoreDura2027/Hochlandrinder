@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hochlandrinder – Gilden-Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --page: #0c0a07;
+    --surface-1: #1b1712;
+    --surface-2: #251f17;
+    --surface-3: #2f271c;
+    --text-primary: #f2ead8;
+    --text-secondary: #c9bea4;
+    --text-muted: #8f8570;
+    --grid: #2e2820;
+    --axis: #4a3d2a;
+    --gold: #d9a441;
+    --gold-hi: #f3d27a;
+    --gold-lo: #7a5a22;
+    --frame: #5a4523;
+    --series-1: #c98500;            /* Gold – Standard-Datenfarbe / Charakter A */
+    --series-1-wash: rgba(201,133,0,0.13);
+    --series-2: #3987e5;            /* Blau – Charakter B */
+    --good: #3fbf3f;
+    --radius: 6px;
+    --serif: "Cinzel", "Trajan Pro", Georgia, serif;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--text-primary); line-height: 1.45;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(217,164,65,0.10), transparent 60%),
+      radial-gradient(100% 100% at 50% 50%, transparent 55%, rgba(0,0,0,0.65)),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.42 0 0 0 0 0.25 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      var(--page);
+    background-attachment: fixed;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 20px 64px; }
+
+  /* ---------- Rahmen im Fantasy-Stil ---------- */
+  .frame {
+    position: relative;
+    background: linear-gradient(180deg, #221c15 0%, #18140f 100%);
+    border: 1px solid var(--frame);
+    border-radius: var(--radius);
+    box-shadow:
+      inset 0 0 0 1px rgba(0,0,0,0.7),
+      inset 0 0 0 3px rgba(217,164,65,0.10),
+      inset 0 1px 0 3px rgba(243,210,122,0.06),
+      0 10px 28px rgba(0,0,0,0.55);
+  }
+  .frame::before, .frame::after {
+    content: ""; position: absolute; top: -4px; width: 8px; height: 8px; transform: rotate(45deg);
+    background: linear-gradient(135deg, var(--gold-hi), var(--gold-lo)); box-shadow: 0 0 0 1px #000;
+  }
+  .frame::before { left: 10px; } .frame::after { right: 10px; }
+
+  /* ---------- Kopfbereich ---------- */
+  header.top {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px;
+    padding: 26px 30px; border-radius: 8px;
+    background:
+      radial-gradient(90% 160% at 0% 0%, rgba(217,164,65,0.20), transparent 55%),
+      linear-gradient(180deg, #2a2117 0%, #17120d 100%);
+    border: 1px solid var(--gold-lo);
+    box-shadow: inset 0 0 0 1px #000, inset 0 0 0 4px rgba(217,164,65,0.16), inset 0 0 40px rgba(0,0,0,0.5), 0 14px 40px rgba(0,0,0,0.6);
+    position: relative;
+  }
+  header.top::after { content: ""; position: absolute; left: 30px; right: 30px; bottom: -1px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .brand { display: flex; align-items: center; gap: 18px; }
+  .crest { width: 74px; height: 84px; flex: none; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6)); }
+  h1 { margin: 0; font-family: var(--serif); font-weight: 800; font-size: 36px; letter-spacing: 1.5px;
+    background: linear-gradient(180deg, #fff2c4 0%, var(--gold-hi) 40%, var(--gold) 70%, #9c6f24 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 2px 0 rgba(0,0,0,0.25); }
+  .sub { color: var(--text-secondary); font-size: 14px; margin-top: 2px; letter-spacing: 0.3px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 11px; border-radius: 3px;
+    border: 1px solid var(--frame); color: var(--text-secondary); background: rgba(0,0,0,0.35); }
+  .pill.demo { border-color: var(--gold-lo); color: var(--gold-hi); }
+  .meta { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+
+  nav.tabs { display: flex; gap: 4px; margin: 18px 0 6px; flex-wrap: wrap; justify-content: center; }
+  nav.tabs a { font-family: var(--serif); font-weight: 700; font-size: 13px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text-secondary); text-decoration: none; padding: 8px 14px; border: 1px solid transparent; border-radius: 3px; }
+  nav.tabs a:hover { color: var(--gold-hi); border-color: var(--frame); background: rgba(217,164,65,0.06); }
+
+  section { margin-top: 34px; scroll-margin-top: 16px; }
+  h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 4px;
+    font-family: var(--serif); font-weight: 700; font-size: 22px; letter-spacing: 1px; color: var(--gold-hi); }
+  h2::before { content: ""; width: 9px; height: 9px; transform: rotate(45deg); flex: none;
+    background: linear-gradient(135deg, var(--gold-hi), var(--gold-lo)); box-shadow: 0 0 0 1px #000; }
+  h2::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(217,164,65,0.55), transparent); }
+  .lead { color: var(--text-secondary); font-size: 14px; margin: 0 0 14px 21px; }
+
+  .grid { display: grid; gap: 14px; }
+  .g-tiles { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .g-2 { grid-template-columns: 1.6fr 1fr; }
+  .g-2e { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 860px) { .g-2, .g-2e { grid-template-columns: 1fr; } }
+
+  .card { padding: 18px; min-width: 0; }
+  .card h3 { margin: 0; font-family: var(--serif); font-size: 15px; font-weight: 700; letter-spacing: 0.5px; color: var(--text-primary); }
+  .card .hint { color: var(--text-muted); font-size: 12.5px; margin: 2px 0 12px; }
+
+  .tile .label { color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
+  .tile .value { font-size: 30px; font-weight: 650; margin-top: 4px; }
+  .tile .delta { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .up { color: var(--good); font-weight: 600; }
+
+  .chart { width: 100%; position: relative; }
+  .chart svg { display: block; width: 100%; overflow: visible; }
+  .chart text { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .chart .endlabel { fill: var(--text-primary); font-size: 12px; font-weight: 600; }
+
+  /* Knöpfe & Auswahl */
+  .seg { display: inline-flex; background: rgba(0,0,0,0.35); border: 1px solid var(--frame); border-radius: 4px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+  .seg button, .btn { all: unset; cursor: pointer; font-size: 13px; padding: 6px 12px; border-radius: 3px; color: var(--text-secondary); }
+  .seg button[aria-pressed="true"] { background: linear-gradient(180deg, #e9bf5c, #a87a2a); color: #1a1208; font-weight: 700; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35); }
+  .seg button:hover:not([aria-pressed="true"]) { color: var(--text-primary); }
+  .btn { border: 1px solid var(--gold-lo); background: linear-gradient(180deg, #3a2c18, #241a0e); color: var(--gold-hi); font-weight: 600;
+    box-shadow: inset 0 1px 0 rgba(243,210,122,0.18); }
+  .btn:hover { border-color: var(--gold); }
+  button:focus-visible, select:focus-visible, .btn:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
+  .row-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+
+  .bars { display: grid; grid-template-columns: minmax(120px, max-content) 1fr auto; gap: 8px 12px; align-items: center; }
+  .bars .name { display: flex; align-items: center; gap: 8px; font-size: 14px; white-space: nowrap; }
+  .bars .rank { color: var(--text-muted); font-size: 12px; width: 18px; text-align: right; font-variant-numeric: tabular-nums; }
+  .bars .rank.top { color: var(--gold-hi); font-weight: 700; }
+  .bars .track { height: 22px; display: flex; align-items: center; }
+  .bars .fill { height: 14px; background: var(--series-1); border-radius: 0 4px 4px 0; min-width: 2px; transition: width .35s ease; }
+  .bars .fill.zero { background: var(--axis); }
+  .bars .val { font-size: 13px; color: var(--text-primary); font-variant-numeric: tabular-nums; text-align: right; min-width: 44px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px var(--surface-1); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th { color: var(--gold); font-family: var(--serif); font-weight: 700; font-size: 12px; letter-spacing: 0.6px; cursor: pointer; user-select: none; }
+  th:hover { color: var(--gold-hi); }
+  th .arr { color: var(--text-muted); font-size: 10px; margin-left: 4px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: rgba(217,164,65,0.06); }
+  .tablewrap { overflow-x: auto; }
+  .plus { color: var(--good); }
+  .muted { color: var(--text-muted); }
+  .lvl { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font-size: 12.5px; font-weight: 700;
+    color: var(--text-primary); background: radial-gradient(circle at 35% 30%, #3a2e1d, #15110b); border: 1.5px solid var(--gold-lo);
+    box-shadow: inset 0 0 0 1px #000; font-variant-numeric: tabular-nums; }
+  .lvl.max { border-color: var(--gold); color: var(--gold-hi); box-shadow: inset 0 0 0 1px #000, 0 0 8px rgba(217,164,65,0.35); }
+
+  img.ava { border-radius: 50%; border: 1.5px solid var(--gold-lo); box-shadow: 0 0 0 1px #000; object-fit: cover; flex: none; background: #000; }
+  .placeholder { display: flex; gap: 16px; align-items: center; border-style: dashed; }
+  .placeholder .icon { width: 46px; height: 46px; border-radius: 4px; background: rgba(0,0,0,0.35); border: 1px solid var(--frame); display: grid; place-items: center; flex: none; }
+
+  /* ---------- Vergleich ---------- */
+  .pickers { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: end; }
+  .pickers label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary); margin-bottom: 6px; }
+  .pickers label .key { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+  select { all: unset; box-sizing: border-box; width: 100%; padding: 10px 36px 10px 12px; border-radius: 4px; cursor: pointer; font-size: 15px;
+    border: 1px solid var(--frame); color: var(--text-primary);
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23d9a441' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center, rgba(0,0,0,0.35); }
+  select option { background: #1b1712; color: var(--text-primary); }
+  .heroes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0 6px; }
+  .hero { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 4px; background: rgba(0,0,0,0.3); border: 1px solid var(--frame); }
+  .hero.b { flex-direction: row-reverse; text-align: right; }
+  .hero .nm { font-family: var(--serif); font-weight: 700; font-size: 17px; }
+  .hero .sm { color: var(--text-secondary); font-size: 13px; }
+  .hero .bar { width: 4px; align-self: stretch; border-radius: 2px; }
+  .duel { display: grid; grid-template-columns: 64px 1fr 150px 1fr 64px; gap: 6px 10px; align-items: center; margin-top: 10px; }
+  .duel .v { font-variant-numeric: tabular-nums; font-size: 14px; }
+  .duel .v.a { text-align: right; } .duel .v.b { text-align: left; }
+  .duel .v.win { font-weight: 700; color: var(--gold-hi); }
+  .duel .v.win.a::before { content: "▲ "; font-size: 10px; } .duel .v.win.b::after { content: " ▲"; font-size: 10px; }
+  .duel .m { text-align: center; color: var(--text-secondary); font-size: 13px; }
+  .duel .t { height: 22px; display: flex; align-items: center; }
+  .duel .t.a { justify-content: flex-end; }
+  .duel .t i { display: block; height: 14px; min-width: 2px; transition: width .35s ease; }
+  .duel .t.a i { background: var(--series-1); border-radius: 4px 0 0 4px; }
+  .duel .t.b i { background: var(--series-2); border-radius: 0 4px 4px 0; }
+  .verdict { margin-top: 14px; text-align: center; font-family: var(--serif); font-size: 15px; color: var(--gold-hi); letter-spacing: 0.5px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary); margin: -4px 0 10px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { display: inline-block; width: 16px; height: 3px; border-radius: 2px; }
+  @media (max-width: 640px) {
+    .pickers { grid-template-columns: 1fr; } .pickers .swap { justify-self: center; }
+    .heroes { grid-template-columns: 1fr; } .hero.b { flex-direction: row; text-align: left; }
+    .duel { grid-template-columns: 58px 1fr 88px 1fr 58px; gap: 6px; } .duel .v { font-size: 13px; white-space: nowrap; } .duel .m { font-size: 12px; }
+  }
+
+  /* ---------- Detail-Panel ---------- */
+  .scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 20; }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  aside.detail { position: fixed; top: 0; right: 0; height: 100%; width: min(520px, 100%); z-index: 21; overflow-y: auto; padding: 22px;
+    background: linear-gradient(180deg, #221c15, #15110c); border-left: 2px solid var(--gold-lo); box-shadow: -10px 0 40px rgba(0,0,0,0.6);
+    transform: translateX(100%); transition: transform .25s ease; }
+  aside.detail.open { transform: none; }
+  aside.detail h2::after, aside.detail h2::before { display: none; }
+  .close { all: unset; cursor: pointer; float: right; font-size: 24px; line-height: 1; color: var(--gold); padding: 0 6px; }
+  .kv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0 6px; }
+  .kv div { background: rgba(0,0,0,0.3); border: 1px solid var(--frame); border-radius: 4px; padding: 10px 12px; }
+  .kv b { display: block; font-size: 20px; }
+  .kv span { color: var(--text-secondary); font-size: 12px; }
+
+  #tip { position: fixed; pointer-events: none; z-index: 50; color: var(--text-primary); font-size: 12.5px; padding: 8px 11px; border-radius: 4px;
+    background: linear-gradient(180deg, rgba(16,20,40,0.97), rgba(8,10,22,0.97)); border: 1px solid #8d8d9a;
+    box-shadow: inset 0 0 0 1px #000, 0 6px 20px rgba(0,0,0,0.5); opacity: 0; transition: opacity .08s; white-space: nowrap; }
+  #tip b { font-variant-numeric: tabular-nums; }
+  #tip .tt { color: var(--gold-hi); font-weight: 600; }
+  #tip .sw { display: inline-block; width: 10px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+  footer { margin-top: 44px; color: var(--text-muted); font-size: 12.5px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <!-- Gildenwappen: eigene Zeichnung -->
+      <svg class="crest" viewBox="0 0 74 84" aria-hidden="true">
+        <defs>
+          <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbe3a0"/><stop offset=".5" stop-color="#d9a441"/><stop offset="1" stop-color="#7a5a22"/></linearGradient>
+          <linearGradient id="gField" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a1e1a"/><stop offset="1" stop-color="#2a0d0b"/></linearGradient>
+        </defs>
+        <path d="M37 2 L70 12 V40 C70 62 54 76 37 82 C20 76 4 62 4 40 V12 Z" fill="url(#gGold)"/>
+        <path d="M37 7 L65 15.5 V40 C65 59 51 71.5 37 77 C23 71.5 9 59 9 40 V15.5 Z" fill="url(#gField)"/>
+        <path d="M37 7 L65 15.5 V40 C65 59 51 71.5 37 77" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1"/>
+        <!-- Hörner -->
+        <path d="M24 34 C18 34 13 30 12 23 C16 27 21 27 26 29" fill="#efe3c4" stroke="#6b5530" stroke-width="1"/>
+        <path d="M50 34 C56 34 61 30 62 23 C58 27 53 27 48 29" fill="#efe3c4" stroke="#6b5530" stroke-width="1"/>
+        <!-- Kopf -->
+        <path d="M25 33 C25 27 30 24 37 24 C44 24 49 27 49 33 V46 C49 55 44 62 37 62 C30 62 25 55 25 46 Z" fill="#b5652e"/>
+        <path d="M23 31 C28 26 32 30 33 34 C35 30 39 30 41 34 C42 30 46 26 51 31 C49 36 45 38 42 38 C40 40 34 40 32 38 C29 38 25 36 23 31 Z" fill="#d78f4e"/>
+        <path d="M23 36 C20 37 18 39 18 41 C21 42 24 41 25 39 Z M51 36 C54 37 56 39 56 41 C53 42 50 41 49 39 Z" fill="#9e5426"/>
+        <circle cx="31" cy="44" r="1.8" fill="#1a0f06"/><circle cx="43" cy="44" r="1.8" fill="#1a0f06"/>
+        <ellipse cx="37" cy="56" rx="8" ry="5.5" fill="#dca47e"/>
+        <ellipse cx="34" cy="56" rx="1.4" ry="1.8" fill="#5a3418"/><ellipse cx="40" cy="56" rx="1.4" ry="1.8" fill="#5a3418"/>
+        <path d="M37 9 l2 4 -2 4 -2 -4z" fill="#fbe3a0"/>
+      </svg>
+      <div>
+        <h1>Hochlandrinder</h1>
+        <div class="sub">WoW Forever · EU · Regelwerk Normal</div>
+      </div>
+    </div>
+    <div class="meta">
+      <span class="pill demo">Vorschau mit Beispieldaten</span>
+      <span class="pill" id="updated">Stand: –</span>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Bereiche">
+    <a href="#gilde">Gilde</a>
+    <a href="#woche">Diese Woche</a>
+    <a href="#vergleich">Vergleich</a>
+    <a href="#gear">Ausrüstung</a>
+    <a href="#schaden">Schaden</a>
+    <a href="#mitglieder">Mitglieder</a>
+  </nav>
+
+  <!-- GILDE GESAMT -->
+  <section id="gilde">
+    <h2>Gilde gesamt</h2>
+    <p class="lead">Wo die Herde als Ganzes steht.</p>
+    <div class="grid g-tiles" id="tiles"></div>
+
+    <div class="grid g-2" style="margin-top:14px">
+      <div class="card frame">
+        <h3>Durchschnittslevel der Gilde</h3>
+        <p class="hint">Täglicher Stand seit dem Start von WoW Forever am 4. November</p>
+        <div class="chart" id="ch-avglevel"></div>
+      </div>
+      <div class="card frame">
+        <h3>Level-Verteilung</h3>
+        <p class="hint">Anzahl Mitglieder je Level-Bereich</p>
+        <div class="chart" id="ch-hist"></div>
+      </div>
+    </div>
+
+    <div class="grid g-2e" style="margin-top:14px">
+      <div class="card frame">
+        <h3>Klassen in der Gilde</h3>
+        <p class="hint">Anzahl Mitglieder je Klasse</p>
+        <div class="bars" id="bars-classes"></div>
+      </div>
+      <div class="card frame">
+        <h3>Gesamt-Fortschritt pro Tag</h3>
+        <p class="hint">Summe aller Level-Aufstiege der Gilde an diesem Tag</p>
+        <div class="chart" id="ch-daily"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIESE WOCHE -->
+  <section id="woche">
+    <h2>Diese Woche</h2>
+    <p class="lead" id="week-lead">Fortschritt seit dem Reset am Mittwoch.</p>
+    <div class="card frame">
+      <div class="row-head">
+        <div>
+          <h3 id="week-title">Level gewonnen</h3>
+          <p class="hint" style="margin-bottom:0">Zuwachs seit Reset, alle Mitglieder</p>
+        </div>
+        <div class="seg" role="group" aria-label="Kennzahl wählen" id="week-seg">
+          <button data-k="level" aria-pressed="true">Level</button>
+          <button data-k="ilvl" aria-pressed="false">Itemlevel</button>
+          <button data-k="ach" aria-pressed="false">Erfolgspunkte</button>
+          <button data-k="hk" aria-pressed="false">Ehrenhafte Siege</button>
+        </div>
+      </div>
+      <div class="bars" id="bars-week"></div>
+    </div>
+  </section>
+
+  <!-- VERGLEICH -->
+  <section id="vergleich">
+    <h2>Vergleich</h2>
+    <p class="lead">Zwei Mitglieder direkt gegeneinander: wer liegt wo vorne?</p>
+    <div class="card frame">
+      <div class="pickers">
+        <div><label for="cmp-a"><span class="key" style="background:var(--series-1)"></span>Charakter A</label><select id="cmp-a"></select></div>
+        <button class="btn swap" id="cmp-swap" aria-label="A und B tauschen" title="Tauschen">⇄ Tauschen</button>
+        <div><label for="cmp-b"><span class="key" style="background:var(--series-2)"></span>Charakter B</label><select id="cmp-b"></select></div>
+      </div>
+      <div class="heroes" id="cmp-heroes"></div>
+      <div class="duel" id="cmp-duel"></div>
+      <div class="verdict" id="cmp-verdict"></div>
+    </div>
+    <div class="grid g-2e" style="margin-top:14px">
+      <div class="card frame">
+        <h3>Level-Verlauf</h3>
+        <p class="hint">Täglicher Stand beider Charaktere</p>
+        <div class="legend" id="lg-1"></div>
+        <div class="chart" id="cmp-level"></div>
+      </div>
+      <div class="card frame">
+        <h3>Itemlevel-Verlauf</h3>
+        <p class="hint">Durchschnitt der angelegten Ausrüstung</p>
+        <div class="legend" id="lg-2"></div>
+        <div class="chart" id="cmp-ilvl"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AUSRÜSTUNG -->
+  <section id="gear">
+    <h2>Ausrüstung</h2>
+    <p class="lead">Wer gerade das beste Gear trägt: durchschnittliches Itemlevel der angelegten Ausrüstung.</p>
+    <div class="grid g-2e">
+      <div class="card frame">
+        <h3>Bestenliste Itemlevel</h3>
+        <p class="hint">Alle Mitglieder, höchstes zuerst</p>
+        <div class="bars" id="bars-gear"></div>
+      </div>
+      <div class="card frame">
+        <h3>Ø Itemlevel der Gilde</h3>
+        <p class="hint">Durchschnitt aller Mitglieder, täglicher Stand</p>
+        <div class="chart" id="ch-ilvl"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCHADEN -->
+  <section id="schaden">
+    <h2>Schaden</h2>
+    <div class="card frame placeholder">
+      <div class="icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d9a441" stroke-width="2" stroke-linecap="round"><path d="M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"/></svg>
+      </div>
+      <div>
+        <h3>Kommt, sobald ihr raidet</h3>
+        <p class="hint" style="margin:4px 0 0">Schadens- und Heilungszahlen gibt es nur über Warcraft Logs. Sobald Warcraft Logs WoW Forever unterstützt und ihr eure Raids loggt, erscheinen hier Ranglisten und Verläufe für DPS und HPS.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- MITGLIEDER -->
+  <section id="mitglieder">
+    <h2>Mitglieder</h2>
+    <p class="lead">Spalte anklicken zum Sortieren, Zeile anklicken für die Detailansicht.</p>
+    <div class="card frame tablewrap">
+      <table id="tbl">
+        <thead><tr>
+          <th data-s="level" class="num">Level<span class="arr"></span></th>
+          <th data-s="name">Charakter<span class="arr"></span></th>
+          <th data-s="cls">Klasse<span class="arr"></span></th>
+          <th data-s="rank">Rang<span class="arr"></span></th>
+          <th data-s="wLevel" class="num">+ Woche<span class="arr"></span></th>
+          <th data-s="ilvl" class="num">Itemlevel<span class="arr"></span></th>
+          <th data-s="ach" class="num">Erfolgspunkte<span class="arr"></span></th>
+          <th data-s="hk" class="num">Ehrenhafte Siege<span class="arr"></span></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <span id="foot-demo">Gerade werden erfundene Beispieldaten angezeigt.<br></span>
+    Daten aus der Blizzard-API (WoW Forever, EU), mehrmals täglich aktualisiert. Charaktere erscheinen dort erst ab Stufe 10 und nach dem Ausloggen.<br>
+    Inoffizielle Fanseite, nicht mit Blizzard Entertainment verbunden.
+  </footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="detail" id="detail" aria-hidden="true" role="dialog" aria-label="Charakterdetails"></aside>
+<div id="tip" role="tooltip"></div>
+
+<script type="module">
+/* ============================================================
+   DATEN
+   In der echten Version ersetzt eine automatisch erzeugte Datei
+   (data/snapshots.json) diesen Block – gleiche Struktur.
+   ============================================================ */
+const CLASSES = {
+  Krieger: "#C69B6D", Paladin: "#F48CBA", "Jäger": "#AAD372", Schurke: "#FFF468", Priester: "#FFFFFF",
+  Schamane: "#0070DD", Magier: "#3FC7EB", Hexenmeister: "#8788EE", Druide: "#FF7C0A"
+};
+const classColor = c => CLASSES[c] || "#9a9a9a";
+const RANK_ORDER = ["Gildenmeister", "Offizier", "Mitglied", "Rekrut"];
+const MEMBERS = [
+  ["bruno-hornfels", "Bruno", "Hornfels", "Krieger", "Gildenmeister", 1.45, 0, .2],
+  ["greta-weidegrund", "Greta", "Weidegrund", "Priester", "Offizier", 1.35, 0, .1],
+  ["heidi-almrausch", "Heidi", "Almrausch", "Druide", "Offizier", 1.25, 0, .3],
+  ["kalle-kuhfuss", "Kalle", "Kuhfuß", "Jäger", "Mitglied", 1.55, 0, .6],
+  ["sepp-grasbichl", "Sepp", "Grasbichl", "Schamane", "Mitglied", 1.0, 0, .4],
+  ["liesl-glockenklang", "Liesl", "Glockenklang", "Magier", "Mitglied", 1.15, 1, .2],
+  ["ferdl-stierbach", "Ferdl", "Stierbach", "Schurke", "Mitglied", 1.3, 0, .9],
+  ["rosi-heuboden", "Rosi", "Heuboden", "Hexenmeister", "Mitglied", 0.85, 1, .3],
+  ["toni-zottelhorn", "Toni", "Zottelhorn", "Paladin", "Mitglied", 1.1, 0, .5],
+  ["vroni-kaelberwies", "Vroni", "Kälberwies", "Priester", "Mitglied", 0.7, 2, .1],
+  ["mats-moorweide", "Mats", "Moorweide", "Krieger", "Mitglied", 0.95, 2, .7],
+  ["anni-butterfass", "Anni", "Butterfass", "Magier", "Mitglied", 0.8, 3, .2],
+  ["jupp-hufeisen", "Jupp", "Hufeisen", "Jäger", "Rekrut", 0.65, 5, .3],
+  ["frieda-weisslinde", "Frieda", "Weißlinde", "Druide", "Rekrut", 0.9, 6, .1],
+  ["gustl-ochsenhof", "Gustl", "Ochsenhof", "Hexenmeister", "Rekrut", 0.6, 7, .5],
+  ["resi-bergwiese", "Resi", "Bergwiese", "Schurke", "Rekrut", 1.2, 8, .8]
+].map(([id, name, surname, cls, rank, speed, joinDay, pvp]) => ({ id, name, surname, cls, rank, speed, joinDay, pvp }));
+
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function buildDemo() {
+  const rnd = mulberry32(20261104);
+  const start = new Date(Date.UTC(2026, 10, 4));
+  const days = 12;
+  const state = {};
+  MEMBERS.forEach(m => state[m.id] = { level: 1, ilvl: 3, ach: 0, hk: 0, at60: 0 });
+  const snapshots = [];
+  for (let d = 0; d < days; d++) {
+    const date = new Date(start.getTime() + d * 864e5);
+    const dow = date.getUTCDay();
+    const weekend = (dow === 0 || dow === 6) ? 1.35 : 1;
+    const snap = { date: date.toISOString().slice(0, 10), members: {} };
+    MEMBERS.forEach(m => {
+      const s = state[m.id];
+      if (d >= m.joinDay && d > 0) {
+        const base = s.level < 20 ? 7 : s.level < 40 ? 4.4 : 3.2;
+        const gain = d === m.joinDay ? base * 0.8 : base * m.speed * weekend * (0.35 + rnd() * 0.95);
+        s.level = Math.min(60, s.level + gain);
+        if (s.level >= 60) { s.at60++; }
+        const lvl = Math.floor(s.level);
+        const target = lvl < 60 ? lvl * 0.92 + rnd() * 2 : 52 + s.at60 * 1.6 + rnd() * 2.5;
+        s.ilvl = Math.max(s.ilvl, Math.min(66, target));
+        s.ach += Math.round(gain * 6 + rnd() * 25);
+        s.hk += Math.round(m.pvp * m.pvp * (lvl > 20 ? 40 : 4) * rnd() * weekend);
+      }
+      if (d >= m.joinDay) snap.members[m.id] = { level: Math.floor(s.level), ilvl: Math.round(s.ilvl * 10) / 10, ach: s.ach, hk: s.hk };
+    });
+    snapshots.push(snap);
+  }
+  return snapshots;
+}
+// Echte Daten laden (data/snapshots.json, wird automatisch erzeugt). Fehlen sie, zeigt die Seite Beispieldaten.
+async function loadData() {
+  try {
+    const r = await fetch("data/snapshots.json", { cache: "no-store" });
+    if (r.ok) { const d = await r.json(); if (d.snapshots && d.snapshots.length && d.members && d.members.length) return { ...d, demo: false }; }
+  } catch (e) { /* keine echten Daten vorhanden */ }
+  return { updated: "2026-11-15T18:00:00Z", members: MEMBERS, snapshots: buildDemo(), demo: true };
+}
+const DATA = await loadData();
+if (!DATA.demo) {
+  document.querySelector(".pill.demo").remove();
+  document.getElementById("foot-demo").remove();
+} else if (location.protocol.startsWith("http") && !location.hostname.endsWith("claude.ai") && !location.hostname.includes("claudeusercontent")) {
+  document.querySelector(".pill.demo").textContent = "Beispieldaten – echte Daten folgen nach dem ersten Abruf";
+}
+
+/* ============================================================
+   AUSWERTUNG
+   ============================================================ */
+const fmt = n => n.toLocaleString("de-DE");
+const fmt1 = n => n.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const dLabel = iso => { const [, m, d] = iso.split("-"); return `${+d}.${+m}.`; };
+const avg = a => a.reduce((s, x) => s + x, 0) / (a.length || 1);
+const snaps = DATA.snapshots;
+const latest = snaps[snaps.length - 1];
+const labels = snaps.map(s => dLabel(s.date));
+
+// Wöchentlicher Reset EU: Mittwoch.
+function lastReset(iso) { const d = new Date(iso + "T00:00:00Z"); const back = (d.getUTCDay() - 3 + 7) % 7; return new Date(d.getTime() - back * 864e5).toISOString().slice(0, 10); }
+const resetDay = lastReset(latest.date);
+const baseSnap = [...snaps].reverse().find(s => s.date <= resetDay) || snaps[0];
+
+const rows = DATA.members.filter(m => latest.members[m.id]).map(m => {
+  const now = latest.members[m.id];
+  const before = baseSnap.members[m.id] || { level: 1, ilvl: 0, ach: 0, hk: 0 };
+  return { ...m, full: `${m.name} ${m.surname}`, ...now,
+    wLevel: now.level - before.level, wIlvl: Math.round((now.ilvl - before.ilvl) * 10) / 10,
+    wAch: now.ach - before.ach, wHk: now.hk - before.hk };
+});
+const byId = Object.fromEntries(rows.map(r => [r.id, r]));
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const avatar = (r, size) => r.avatar ? `<img class="ava" src="${esc(r.avatar)}" alt="" width="${size}" height="${size}" loading="lazy">` : "";
+const placeOf = id => [...rows].sort((a, b) => b.level - a.level || b.ilvl - a.ilvl).findIndex(x => x.id === id) + 1;
+
+/* ============================================================
+   TOOLTIP
+   ============================================================ */
+const tip = document.getElementById("tip");
+function showTip(html, x, y) { tip.innerHTML = html; tip.style.opacity = 1;
+  const r = tip.getBoundingClientRect(); let left = x + 14, top = y - r.height - 10;
+  if (left + r.width > innerWidth - 8) left = x - r.width - 14; if (top < 8) top = y + 16;
+  tip.style.left = left + "px"; tip.style.top = top + "px"; }
+function hideTip() { tip.style.opacity = 0; }
+
+/* ============================================================
+   DIAGRAMME (reines SVG, keine externen Bibliotheken)
+   ============================================================ */
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs = {}, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function niceTicks(min, max, count = 4) {
+  if (min === max) { min -= 1; max += 1; }
+  const raw = (max - min) / count; const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(f => f * mag).find(s => s >= raw);
+  const lo = Math.floor(min / step) * step, hi = Math.ceil(max / step) * step; const out = [];
+  for (let v = lo; v <= hi + 1e-9; v += step) out.push(Math.round(v * 100) / 100); return out;
+}
+const observed = new WeakMap();
+function onResize(container, draw) {
+  draw();
+  if (!observed.has(container)) { const ro = new ResizeObserver(() => observed.get(container)()); ro.observe(container); }
+  observed.set(container, draw);
+}
+
+/* Liniendiagramm – eine oder mehrere Reihen, gemeinsame x-Achse; null = kein Wert */
+function lineChart(container, xLabels, series, { height = 220, yMin, yMax, valFmt = fmt } = {}) {
+  onResize(container, () => {
+    container.innerHTML = "";
+    const all = series.flatMap(s => s.vals).filter(v => v != null);
+    if (!all.length) { container.innerHTML = `<p class="hint">Noch keine Daten.</p>`; return; }
+    const W = container.clientWidth || 600, H = height, m = { l: 34, r: 44, t: 14, b: 26 }, n = xLabels.length;
+    const ticks = niceTicks(yMin ?? Math.min(...all), yMax ?? Math.max(...all));
+    const y0 = ticks[0], y1 = ticks[ticks.length - 1];
+    const X = i => m.l + (n === 1 ? 0 : i * (W - m.l - m.r) / (n - 1));
+    const Y = v => m.t + (1 - (v - y0) / (y1 - y0 || 1)) * (H - m.t - m.b);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img" }, container);
+    ticks.forEach(t => { el("line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), stroke: t === y0 ? "var(--axis)" : "var(--grid)", "stroke-width": 1 }, svg);
+      el("text", { x: m.l - 8, y: Y(t) + 4, "text-anchor": "end" }, svg).textContent = fmt(t); });
+    const every = Math.ceil(n / Math.max(2, Math.floor((W - m.l - m.r) / 56)));
+    xLabels.forEach((lb, i) => { if ((i % every === 0 && n - 1 - i >= every) || i === n - 1)
+      el("text", { x: X(i), y: H - 6, "text-anchor": "middle" }, svg).textContent = lb; });
+    const ends = [];
+    series.forEach(s => {
+      let d = "", first = -1, last = -1;
+      s.vals.forEach((v, i) => { if (v == null) return; d += `${last === i - 1 && last >= 0 ? "L" : "M"}${X(i)},${Y(v)}`; if (first < 0) first = i; last = i; });
+      if (last < 0) return;
+      if (series.length === 1) el("path", { d: `${d}L${X(last)},${Y(y0)}L${X(first)},${Y(y0)}Z`, fill: "var(--series-1-wash)" }, svg);
+      el("path", { d, fill: "none", stroke: s.color, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+      el("circle", { cx: X(last), cy: Y(s.vals[last]), r: 4, fill: s.color, stroke: "var(--surface-1)", "stroke-width": 2 }, svg);
+      ends.push({ x: X(last), y: Y(s.vals[last]), v: s.vals[last] });
+    });
+    // Endwerte nur beschriften, wenn sie sich nicht überlagern (sonst tragen Legende + Tooltip)
+    const clash = ends.some((a, i) => ends.some((b, j) => j > i && Math.abs(a.y - b.y) < 14 && Math.abs(a.x - b.x) < 40));
+    if (!clash) ends.forEach(e => el("text", { x: e.x + 8, y: e.y + 4, class: "endlabel" }, svg).textContent = valFmt(e.v));
+    // Hover
+    const cross = el("line", { y1: m.t, y2: H - m.b, stroke: "var(--text-muted)", "stroke-width": 1, opacity: 0 }, svg);
+    const hdots = series.map(s => el("circle", { r: 5, fill: s.color, stroke: "var(--surface-1)", "stroke-width": 2, opacity: 0 }, svg));
+    const hit = el("rect", { x: m.l - 10, y: 0, width: W - m.l - m.r + 20, height: H, fill: "transparent" }, svg);
+    hit.addEventListener("mousemove", e => {
+      const r = svg.getBoundingClientRect(); const px = (e.clientX - r.left) * W / r.width;
+      const i = Math.max(0, Math.min(n - 1, Math.round((px - m.l) / ((W - m.l - m.r) / Math.max(1, n - 1)))));
+      cross.setAttribute("x1", X(i)); cross.setAttribute("x2", X(i)); cross.setAttribute("opacity", 1);
+      series.forEach((s, k) => { const v = s.vals[i]; hdots[k].setAttribute("opacity", v == null ? 0 : 1); if (v != null) { hdots[k].setAttribute("cx", X(i)); hdots[k].setAttribute("cy", Y(v)); } });
+      const lines = series.map(s => `${series.length > 1 ? `<span class="sw" style="background:${s.color}"></span>${s.name}: ` : ""}<b>${s.vals[i] == null ? "–" : valFmt(s.vals[i])}</b>`).join("<br>");
+      showTip(`<span class="tt">${xLabels[i]}</span><br>${lines}`, e.clientX, e.clientY);
+    });
+    hit.addEventListener("mouseleave", () => { cross.setAttribute("opacity", 0); hdots.forEach(d => d.setAttribute("opacity", 0)); hideTip(); });
+  });
+}
+
+function columnChart(container, cols, { height = 220, tipFmt } = {}) {
+  onResize(container, () => {
+    container.innerHTML = "";
+    if (!cols.length) { container.innerHTML = `<p class="hint">Noch keine Daten – erscheint ab dem zweiten Tag.</p>`; return; }
+    const W = container.clientWidth || 400, H = height, m = { l: 26, r: 6, t: 18, b: 26 };
+    const max = Math.max(...cols.map(c => c.v), 1); const ticks = niceTicks(0, max, 3); const top = ticks[ticks.length - 1];
+    const Y = v => m.t + (1 - v / top) * (H - m.t - m.b);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img" }, container);
+    ticks.forEach(t => { el("line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), stroke: t === 0 ? "var(--axis)" : "var(--grid)" }, svg);
+      el("text", { x: m.l - 6, y: Y(t) + 4, "text-anchor": "end" }, svg).textContent = fmt(t); });
+    const band = (W - m.l - m.r) / cols.length, bw = Math.min(24, band - 6);
+    const step = band < 34 ? Math.ceil(34 / band) : 1;
+    cols.forEach((c, i) => {
+      const cx = m.l + band * i + band / 2, h = Y(0) - Y(c.v), x = cx - bw / 2, yTop = Y(c.v), r = Math.min(4, h);
+      if (c.v > 0) el("path", { d: `M${x},${Y(0)}V${yTop + r}Q${x},${yTop} ${x + r},${yTop}H${x + bw - r}Q${x + bw},${yTop} ${x + bw},${yTop + r}V${Y(0)}Z`, fill: "var(--series-1)" }, svg);
+      if (c.v > 0 && band >= 30) el("text", { x: cx, y: yTop - 5, "text-anchor": "middle", class: "endlabel" }, svg).textContent = fmt(c.v);
+      if ((cols.length - 1 - i) % step === 0) el("text", { x: cx, y: H - 8, "text-anchor": "middle" }, svg).textContent = c.label;
+      const hit = el("rect", { x: m.l + band * i, y: m.t, width: band, height: H - m.t - m.b, fill: "transparent" }, svg);
+      hit.addEventListener("mousemove", e => showTip(tipFmt ? tipFmt(c) : `<span class="tt">${c.label}</span><br><b>${fmt(c.v)}</b>`, e.clientX, e.clientY));
+      hit.addEventListener("mouseleave", hideTip);
+    });
+  });
+}
+
+function barList(container, items, { valFmt = fmt, ranked = false, tipFmt } = {}) {
+  container.innerHTML = "";
+  const max = Math.max(...items.map(i => i.v), 1e-9);
+  items.forEach((it, idx) => {
+    const name = document.createElement("div"); name.className = "name";
+    name.innerHTML = `${ranked ? `<span class="rank${idx < 3 ? " top" : ""}">${idx + 1}</span>` : ""}${it.color ? `<span class="dot" style="background:${it.color}"></span>` : ""}<span>${it.label}</span>`;
+    const track = document.createElement("div"); track.className = "track";
+    const fill = document.createElement("div"); fill.className = "fill" + (it.v <= 0 ? " zero" : "");
+    fill.style.width = it.v <= 0 ? "2px" : (100 * it.v / max) + "%";
+    track.appendChild(fill);
+    const val = document.createElement("div"); val.className = "val"; val.textContent = valFmt(it.v);
+    const tipHtml = tipFmt ? tipFmt(it) : `<span class="tt">${it.label}</span><br><b>${valFmt(it.v)}</b>`;
+    [name, track].forEach(n => { n.addEventListener("mousemove", e => showTip(tipHtml, e.clientX, e.clientY)); n.addEventListener("mouseleave", hideTip); });
+    container.append(name, track, val);
+  });
+}
+
+/* ============================================================
+   AUFBAU DER SEITE
+   ============================================================ */
+document.getElementById("updated").textContent = "Stand: " + new Date(DATA.updated).toLocaleString("de-DE", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }) + " Uhr";
+document.getElementById("week-lead").textContent = `Fortschritt seit dem wöchentlichen Reset am Mittwoch, ${dLabel(resetDay)}`;
+
+// Kennzahlen
+const avgLevel = avg(rows.map(r => r.level));
+const avgLevelBefore = avg(rows.map(r => (baseSnap.members[r.id]?.level) ?? 1));
+const at60 = rows.filter(r => r.level >= 60);
+const tiles = [
+  { label: "Mitglieder", value: fmt(rows.length), delta: `${rows.filter(r => !baseSnap.members[r.id]).length} neu diese Woche` },
+  { label: "Ø Level", value: fmt1(avgLevel), delta: `<span class="up">▲ ${fmt1(avgLevel - avgLevelBefore)}</span> seit Reset` },
+  { label: "Auf Stufe 60", value: `${at60.length} <span class="muted" style="font-size:16px;font-weight:500">von ${rows.length}</span>`, delta: `${rows.filter(r => r.level >= 60 && (baseSnap.members[r.id]?.level ?? 0) < 60).length} diese Woche erreicht` },
+  { label: "Ø Itemlevel auf 60", value: at60.length ? fmt1(avg(at60.map(r => r.ilvl))) : "–", delta: "angelegte Ausrüstung" },
+  { label: "Level-Aufstiege", value: fmt(rows.reduce((s, r) => s + r.wLevel, 0)), delta: "diese Woche, alle zusammen" }
+];
+document.getElementById("tiles").innerHTML = tiles.map(t => `<div class="card frame tile"><div class="label">${t.label}</div><div class="value">${t.value}</div><div class="delta">${t.delta}</div></div>`).join("");
+
+lineChart(document.getElementById("ch-avglevel"), labels,
+  [{ name: "Ø Level", color: "var(--series-1)", vals: snaps.map(s => Math.round(avg(Object.values(s.members).map(v => v.level)) * 10) / 10) }],
+  { yMin: 0, yMax: 60, valFmt: fmt1 });
+
+const buckets = [["1–19", 1, 19], ["20–29", 20, 29], ["30–39", 30, 39], ["40–49", 40, 49], ["50–59", 50, 59], ["60", 60, 60]];
+columnChart(document.getElementById("ch-hist"),
+  buckets.map(([label, a, b]) => ({ label, v: rows.filter(r => r.level >= a && r.level <= b).length })),
+  { tipFmt: c => `<span class="tt">Level ${c.label}</span><br><b>${c.v}</b> ${c.v === 1 ? "Mitglied" : "Mitglieder"}` });
+
+const clsCount = [...new Set(rows.map(r => r.cls))].map(c => ({ label: c, v: rows.filter(r => r.cls === c).length, color: classColor(c) })).filter(c => c.v > 0).sort((a, b) => b.v - a.v || a.label.localeCompare(b.label));
+barList(document.getElementById("bars-classes"), clsCount, { tipFmt: it => `<span class="tt">${it.label}</span><br><b>${it.v}</b> ${it.v === 1 ? "Mitglied" : "Mitglieder"}` });
+
+columnChart(document.getElementById("ch-daily"),
+  snaps.slice(1).map((s, i) => ({ label: dLabel(s.date), v: Object.entries(s.members).reduce((sum, [id, v]) => sum + v.level - (snaps[i].members[id]?.level ?? 1), 0) })),
+  { tipFmt: c => `<span class="tt">${c.label}</span><br><b>${fmt(c.v)}</b> Level-Aufstiege` });
+
+// Diese Woche
+const WEEK = {
+  level: { title: "Level gewonnen", key: "wLevel", f: v => "+" + fmt(v) },
+  ilvl: { title: "Itemlevel gewonnen", key: "wIlvl", f: v => "+" + fmt1(v) },
+  ach: { title: "Erfolgspunkte gesammelt", key: "wAch", f: v => "+" + fmt(v) },
+  hk: { title: "Ehrenhafte Siege", key: "wHk", f: v => "+" + fmt(v) }
+};
+function renderWeek(k) {
+  const cfg = WEEK[k]; document.getElementById("week-title").textContent = cfg.title;
+  const items = rows.map(r => ({ label: r.full, v: r[cfg.key], color: classColor(r.cls), r })).sort((a, b) => b.v - a.v);
+  barList(document.getElementById("bars-week"), items, { ranked: true, valFmt: cfg.f, tipFmt: it => `<span class="tt">${it.label}</span> · ${it.r.cls}<br>${cfg.title}: <b>${cfg.f(it.v)}</b>` });
+}
+document.querySelectorAll("#week-seg button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#week-seg button").forEach(x => x.setAttribute("aria-pressed", x === b)); renderWeek(b.dataset.k);
+}));
+renderWeek("level");
+
+/* ---------- Vergleich ---------- */
+const selA = document.getElementById("cmp-a"), selB = document.getElementById("cmp-b");
+const sortedByName = [...rows].sort((a, b) => a.full.localeCompare(b.full));
+[selA, selB].forEach(s => s.innerHTML = sortedByName.map(r => `<option value="${r.id}">${r.full} (${r.level}, ${r.cls})</option>`).join(""));
+const top2 = [...rows].sort((a, b) => b.level - a.level || b.ilvl - a.ilvl);
+selA.value = top2[0].id; selB.value = (top2[1] || top2[0]).id;
+
+const DUEL = [
+  { label: "Level", k: "level", f: fmt },
+  { label: "Itemlevel", k: "ilvl", f: fmt1 },
+  { label: "Erfolgspunkte", k: "ach", f: fmt },
+  { label: "Ehrenhafte Siege", k: "hk", f: fmt },
+  { label: "Level diese Woche", k: "wLevel", f: v => "+" + fmt(v) },
+  { label: "Itemlevel diese Woche", k: "wIlvl", f: v => "+" + fmt1(v) }
+];
+function renderCompare() {
+  const a = byId[selA.value], b = byId[selB.value];
+  const hero = (r, side) => `<div class="hero ${side}"><span class="bar" style="background:var(--series-${side === "a" ? 1 : 2})"></span>
+    ${avatar(r, 44)}<span class="lvl ${r.level >= 60 ? "max" : ""}">${r.level}</span>
+    <div><div class="nm">${r.full}</div><div class="sm"><span class="dot" style="background:${classColor(r.cls)};display:inline-block;margin-right:6px"></span>${r.cls} · ${r.rank} · Platz ${placeOf(r.id)}</div></div></div>`;
+  document.getElementById("cmp-heroes").innerHTML = hero(a, "a") + hero(b, "b");
+  let winsA = 0, winsB = 0;
+  const duel = document.getElementById("cmp-duel"); duel.innerHTML = "";
+  DUEL.forEach(d => {
+    const va = a[d.k], vb = b[d.k], max = Math.max(va, vb, 1e-9);
+    const wa = va > vb, wb = vb > va; if (wa) winsA++; if (wb) winsB++;
+    const tipHtml = `<span class="tt">${d.label}</span><br><span class="sw" style="background:var(--series-1)"></span>${a.full}: <b>${d.f(va)}</b><br><span class="sw" style="background:var(--series-2)"></span>${b.full}: <b>${d.f(vb)}</b>`;
+    const parts = [
+      `<div class="v a ${wa ? "win" : ""}">${d.f(va)}</div>`,
+      `<div class="t a"><i style="width:${Math.max(0, 100 * va / max)}%"></i></div>`,
+      `<div class="m">${d.label}</div>`,
+      `<div class="t b"><i style="width:${Math.max(0, 100 * vb / max)}%"></i></div>`,
+      `<div class="v b ${wb ? "win" : ""}">${d.f(vb)}</div>`
+    ];
+    parts.forEach(h => { const t = document.createElement("template"); t.innerHTML = h; const node = t.content.firstChild;
+      node.addEventListener("mousemove", e => showTip(tipHtml, e.clientX, e.clientY)); node.addEventListener("mouseleave", hideTip); duel.appendChild(node); });
+  });
+  const v = document.getElementById("cmp-verdict");
+  if (a.id === b.id) v.textContent = "Wähle zwei verschiedene Charaktere.";
+  else if (winsA === winsB) v.textContent = `Gleichstand: je ${winsA} von ${DUEL.length} Kategorien`;
+  else { const w = winsA > winsB ? a : b; v.textContent = `${w.name} liegt in ${Math.max(winsA, winsB)} von ${DUEL.length} Kategorien vorne`; }
+  const legend = `<span><i style="background:var(--series-1)"></i>${a.full}</span><span><i style="background:var(--series-2)"></i>${b.full}</span>`;
+  document.getElementById("lg-1").innerHTML = legend; document.getElementById("lg-2").innerHTML = legend;
+  const valsOf = (id, k) => snaps.map(s => s.members[id] ? s.members[id][k] : null);
+  lineChart(document.getElementById("cmp-level"), labels, [
+    { name: a.full, color: "var(--series-1)", vals: valsOf(a.id, "level") },
+    { name: b.full, color: "var(--series-2)", vals: valsOf(b.id, "level") }], { height: 200, yMin: 0, yMax: 60 });
+  lineChart(document.getElementById("cmp-ilvl"), labels, [
+    { name: a.full, color: "var(--series-1)", vals: valsOf(a.id, "ilvl") },
+    { name: b.full, color: "var(--series-2)", vals: valsOf(b.id, "ilvl") }], { height: 200, yMin: 0, valFmt: fmt1 });
+}
+selA.addEventListener("change", renderCompare); selB.addEventListener("change", renderCompare);
+document.getElementById("cmp-swap").addEventListener("click", () => { const t = selA.value; selA.value = selB.value; selB.value = t; renderCompare(); });
+renderCompare();
+
+// Ausrüstung
+barList(document.getElementById("bars-gear"),
+  rows.map(r => ({ label: r.full, v: r.ilvl, color: classColor(r.cls), r })).sort((a, b) => b.v - a.v),
+  { ranked: true, valFmt: fmt1, tipFmt: it => `<span class="tt">${it.label}</span> · Level ${it.r.level}<br>Itemlevel <b>${fmt1(it.v)}</b>` });
+lineChart(document.getElementById("ch-ilvl"), labels,
+  [{ name: "Ø Itemlevel", color: "var(--series-1)", vals: snaps.map(s => Math.round(avg(Object.values(s.members).map(v => v.ilvl)) * 10) / 10) }],
+  { yMin: 0, valFmt: fmt1 });
+
+// Mitgliedertabelle
+let sortKey = "level", sortDir = -1;
+function renderTable() {
+  const sorted = [...rows].sort((a, b) => {
+    let x = a[sortKey], y = b[sortKey];
+    if (sortKey === "rank") { x = RANK_ORDER.indexOf(x); y = RANK_ORDER.indexOf(y); }
+    if (sortKey === "name") { x = a.full; y = b.full; }
+    return (typeof x === "string" ? x.localeCompare(y) : x - y) * sortDir || b.ilvl - a.ilvl;
+  });
+  document.querySelector("#tbl tbody").innerHTML = sorted.map(r => `<tr data-id="${r.id}" tabindex="0">
+    <td class="num"><span class="lvl ${r.level >= 60 ? "max" : ""}">${r.level}</span></td>
+    <td><span style="display:inline-flex;align-items:center;gap:8px">${avatar(r, 26) || `<span class="dot" style="background:${classColor(r.cls)}"></span>`}${r.full}</span></td>
+    <td>${r.cls}</td><td class="muted">${r.rank}</td>
+    <td class="num ${r.wLevel > 0 ? "plus" : "muted"}">${r.wLevel > 0 ? "+" + r.wLevel : "–"}</td>
+    <td class="num">${fmt1(r.ilvl)}</td><td class="num">${fmt(r.ach)}</td><td class="num">${fmt(r.hk)}</td></tr>`).join("");
+  document.querySelectorAll("#tbl th").forEach(th => th.querySelector(".arr").textContent = th.dataset.s === sortKey ? (sortDir < 0 ? "▼" : "▲") : "");
+  document.querySelectorAll("#tbl tbody tr").forEach(tr => {
+    tr.addEventListener("click", () => openDetail(tr.dataset.id));
+    tr.addEventListener("keydown", e => { if (e.key === "Enter") openDetail(tr.dataset.id); });
+  });
+}
+document.querySelectorAll("#tbl th").forEach(th => th.addEventListener("click", () => {
+  const k = th.dataset.s; if (k === sortKey) sortDir *= -1; else { sortKey = k; sortDir = ["name", "cls", "rank"].includes(k) ? 1 : -1; } renderTable();
+}));
+renderTable();
+
+// Detailansicht
+const detail = document.getElementById("detail"), scrim = document.getElementById("scrim");
+function openDetail(id) {
+  const r = byId[id];
+  detail.innerHTML = `<button class="close" aria-label="Schließen">×</button>
+    <div style="display:flex;align-items:center;gap:12px">${avatar(r, 56)}<span class="lvl ${r.level >= 60 ? "max" : ""}" style="width:40px;height:40px;font-size:15px">${r.level}</span>
+    <div><h2 style="margin:0">${r.full}</h2>
+    <div class="sub"><span class="dot" style="background:${classColor(r.cls)};display:inline-block;margin-right:6px"></span>${r.cls} · ${r.rank} · Platz ${placeOf(id)} von ${rows.length}</div></div></div>
+    <div class="kv">
+      <div><b>${r.level}</b><span>Level ${r.wLevel > 0 ? `<span class="plus">(+${r.wLevel})</span>` : ""}</span></div>
+      <div><b>${fmt1(r.ilvl)}</b><span>Itemlevel ${r.wIlvl > 0 ? `<span class="plus">(+${fmt1(r.wIlvl)})</span>` : ""}</span></div>
+      <div><b>${fmt(r.ach)}</b><span>Erfolgspunkte</span></div>
+    </div>
+    <button class="btn" id="d-cmp" style="margin:6px 0 4px">⚔ Mit anderem Mitglied vergleichen</button>
+    <div class="card frame" style="margin-top:14px"><h3>Level-Verlauf</h3><p class="hint">Täglicher Stand</p><div class="chart" id="d-level"></div></div>
+    <div class="card frame" style="margin-top:14px"><h3>Itemlevel-Verlauf</h3><p class="hint">Durchschnitt der angelegten Ausrüstung</p><div class="chart" id="d-ilvl"></div></div>`;
+  detail.classList.add("open"); scrim.classList.add("open"); detail.setAttribute("aria-hidden", "false");
+  const vals = k => snaps.map(s => s.members[id] ? s.members[id][k] : null);
+  lineChart(document.getElementById("d-level"), labels, [{ name: "Level", color: "var(--series-1)", vals: vals("level") }], { height: 180, yMin: 0, yMax: 60 });
+  lineChart(document.getElementById("d-ilvl"), labels, [{ name: "Itemlevel", color: "var(--series-1)", vals: vals("ilvl") }], { height: 180, yMin: 0, valFmt: fmt1 });
+  detail.querySelector(".close").addEventListener("click", closeDetail);
+  document.getElementById("d-cmp").addEventListener("click", () => {
+    selA.value = id; if (selB.value === id) selB.value = (top2.find(x => x.id !== id) || top2[0]).id;
+    renderCompare(); closeDetail(); document.getElementById("vergleich").scrollIntoView({ behavior: "smooth" });
+  });
+  detail.querySelector(".close").focus();
+}
+function closeDetail() { detail.classList.remove("open"); scrim.classList.remove("open"); detail.setAttribute("aria-hidden", "true"); hideTip(); }
+scrim.addEventListener("click", closeDetail);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDetail(); });
+</script>
+</body>
+</html>

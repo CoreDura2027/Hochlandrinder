@@ -1,0 +1,10 @@
+{
+  "gilde": "Hochlandrinder",
+  "region": "eu",
+  "regelwerk": "Normal",
+  "mitglieder": [
+    { "vorname": "Vorname", "nachname": "Nachname", "rang": "Gildenmeister" },
+    { "vorname": "Zweiter", "nachname": "Charakter", "rang": "Offizier" },
+    { "vorname": "Dritter", "nachname": "Charakter", "rang": "Mitglied" }
+  ]
+}
